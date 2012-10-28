@@ -820,5 +820,42 @@ Date: Fri, 05 Jan 2001 15:43:57 +0000
 EOF
 test_expect_equal_file OUTPUT EXPECTED
 
+test_begin_subtest "Extracting all tags from a thread"
+add_message \
+    '[subject]="Extracting all tags from a thread"' \
+    '[body]="body 1"'
+parent=${gen_msg_id}
+add_message \
+    '[subject]="Extracting all tags from a thread"' \
+    '[body]="body 2"' \
+    "[in-reply-to]=\<$parent\>"
+add_message \
+    '[subject]="Extracting all tags from a thread"' \
+    '[body]="body 3"' \
+    "[in-reply-to]=\<$parent\>"
+latest=${gen_msg_id}
+# Extract the thread-id from one of the emails
+thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
+# Add tag "mytagfoo" to one of the emails
+notmuch tag +mytagfoo id:${latest}
+test_emacs_expect_t \
+    "(let ((output (notmuch-query-thread-tags-from-id \"${thread_id}\"))
+           (expected '(\"inbox\" \"mytagfoo\" \"unread\")))
+      (notmuch-test-expect-equal output expected))"
+
+test_begin_subtest "The tags appear in the header-line of notmuch-show"
+add_message \
+    '[subject]="foo bar"' \
+    '[body]="body 1"'
+parent=${gen_msg_id}
+# Add tag "mytagfoo" to one of the emails
+notmuch tag +mytagfoo id:${parent}
+# Extract the thread-id from one of the emails
+thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
+test_emacs_expect_t \
+    "(notmuch-show \"thread:${thread_id}\")
+     (if (string-match-p \"mytagfoo\" (format-mode-line header-line-format))
+         t
+       \"The tag mytagfoo was not in the header-line-format\")"
 
 test_done

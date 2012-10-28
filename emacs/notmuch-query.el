@@ -81,4 +81,20 @@ See the function notmuch-query-get-threads for more information."
    (lambda (msg) (plist-get msg :id))
    (notmuch-query-get-threads search-terms)))
 
+(defun notmuch-query-thread-tags-from-id (thread-id)
+  "Return the tags of thread whose id is THREAD-ID.
+The thread tags are the union of the tags of emails in the
+thread."
+  (let ((tag-lists
+	 (notmuch-query-map-forest
+	  (lambda (msg) (plist-get msg :tags))
+	  (car (notmuch-query-get-threads
+		(list (concat "thread:" thread-id)))))))
+    (case (length tag-lists)
+      (0 nil)
+      (1 (car tag-lists))
+      (otherwise (reduce (lambda (l1 l2)
+			   (union l1 l2 :test 'string=))
+			 tag-lists)))))
+
 (provide 'notmuch-query)

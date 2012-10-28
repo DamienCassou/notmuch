@@ -36,6 +36,7 @@
 (require 'notmuch-mua)
 (require 'notmuch-crypto)
 (require 'notmuch-print)
+(require 'notmuch-tager)
 
 (declare-function notmuch-call-notmuch-process "notmuch" (&rest args))
 (declare-function notmuch-fontify-headers "notmuch" nil)
@@ -1048,6 +1049,12 @@ function is used."
     (notmuch-show-goto-first-wanted-message)
     (current-buffer)))
 
+(defun notmuch-show-thread-id ()
+  "Return the raw thread id of the currently visited thread."
+  ;; `notmuch-show-thread-id' is of the form "thread:00001212" so we
+  ;; have to extract the second part.
+  (second (split-string notmuch-show-thread-id ":")))
+
 (defun notmuch-show-build-buffer ()
   (let ((inhibit-read-only t))
 
@@ -1077,10 +1084,17 @@ function is used."
 
       (jit-lock-register #'notmuch-show-buttonise-links)
 
-      ;; Set the header line to the subject of the first message.
-      (setq header-line-format (notmuch-show-strip-re (notmuch-show-get-subject)))
-
+      (notmuch-show-update-header-line)
       (run-hooks 'notmuch-show-hook))))
+
+(defun notmuch-show-update-header-line ()
+  "Make the header-line show the thread's subject and tags."
+  (let ((thread-subject (notmuch-show-strip-re (notmuch-show-get-subject))))
+    (setq header-line-format
+	  (cons
+	   thread-subject
+	   (notmuch-tager-present-tags
+	    (notmuch-query-thread-tags-from-id (notmuch-show-thread-id)))))))
 
 (defun notmuch-show-capture-state ()
   "Capture the state of the current buffer.
