@@ -431,10 +431,11 @@ message at DEPTH in the current thread."
 	    (notmuch-show-clean-address (plist-get headers :From))
 	    " ("
 	    date
-	    ") ("
-	    (propertize (mapconcat 'identity tags " ")
-			'face 'notmuch-tag-face)
-	    ")\n")
+	    ") "
+	    (propertize
+	     (format-mode-line (notmuch-tagger-present-tags tags))
+	     'face 'notmuch-tag-face)
+	    "\n")
     (overlay-put (make-overlay start (point)) 'face 'notmuch-message-summary-face)))
 
 (defun notmuch-show-insert-header (header header-value)
@@ -1096,10 +1097,12 @@ function is used."
   "Make the header-line show the thread's subject and tags."
   (let ((thread-subject (notmuch-show-strip-re (notmuch-show-get-subject))))
     (setq header-line-format
-	  (cons
+	  (list
 	   thread-subject
+	   " "
 	   (notmuch-tagger-present-tags
-	    (notmuch-query-thread-tags-from-id (notmuch-show-thread-id)))))))
+	    (notmuch-query-thread-tags-from-id (notmuch-show-thread-id))
+	    t)))))
 
 (defun notmuch-show-capture-state ()
   "Capture the state of the current buffer.

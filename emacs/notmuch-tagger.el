@@ -47,36 +47,82 @@
   "Show a `notmuch-search' buffer for the TARGET tag."
   (notmuch-search (concat "tag:" target)))
 
-(defun notmuch-tagger-button-action (button)
+(defun notmuch-tagger-headerline-button-action (button)
   "Open `notmuch-search' for the tag referenced by BUTTON."
-  (let ((tag (header-button-get button :notmuch-tagger-tag)))
+  (let ((tag (header-button-get button 'notmuch-tagger-tag)))
     (notmuch-tagger-goto-target tag)))
 
-(define-button-type 'notmuch-tagger-button-type
-  :supertype 'header
-  :action    'notmuch-tagger-button-action
-  :follow-link t)
+(defun notmuch-tagger-body-button-action (button)
+  "Open `notmuch-search' for the tag referenced by BUTTON."
+  (let ((tag (button-get button 'notmuch-tagger-tag)))
+    (notmuch-tagger-goto-target tag)))
 
-(defun notmuch-tagger-make-link (target)
+(define-button-type 'notmuch-tagger-headerline-button-type
+  'supertype 'header
+  'action    #'notmuch-tagger-headerline-button-action
+  'follow-link t)
+
+(define-button-type 'notmuch-tagger-body-button-type
+  'action    #'notmuch-tagger-body-button-action
+  'follow-link t)
+
+(defun notmuch-tagger-make-headerline-link (target)
   "Return a property list that presents a link to TARGET.
 
-TARGET is a notmuch tag."
+TARGET is a notmuch tag.
+The returned property list will only work in the header-line."
   (header-button-format
    target
-   :type 'notmuch-tagger-button-type
-   :notmuch-tagger-tag target
-   :help-echo (format "%s: Search other messages like this" target)))
+   :type 'notmuch-tagger-headerline-button-type
+   'notmuch-tagger-tag target
+   'help-echo (format "%s: Search other messages like this" target)))
 
-(defun notmuch-tagger-format-tags (tags)
+(defun notmuch-tagger-make-body-link (target)
+  "Return a property list that presents a link to TARGET.
+
+TARGET is a notmuch tag.
+The returned property list will work everywhere except in the
+header-line."
+  (let ((button (copy-sequence target)))
+    (make-text-button
+     button nil
+     'type 'notmuch-tagger-body-button-type
+     'notmuch-tagger-tag target
+     'help-echo (format "%s: Search other messages like this" target))
+    button))
+
+(defun notmuch-tagger-make-link (target headerline)
+"Return a property list that presents a link to TARGET.
+
+TARGET is a notmuch tag.
+
+If HEADERLINE is non-nil the returned list will be ready for
+inclusion in the buffer's header-line. HEADERLINE must be nil in
+all other cases."
+  (if headerline
+      (notmuch-tagger-make-headerline-link target)
+    (notmuch-tagger-make-body-link target)))
+
+(defun notmuch-tagger-format-tags (tags &optional headerline)
   "Return a format list for TAGS suitable for use in header line.
-See Info node `(elisp)Mode Line Format' for more information."
-  (mapcar 'notmuch-tagger-make-link tags))
+See Info node `(elisp)Mode Line Format' for more information.
 
-(defun notmuch-tagger-present-tags (tags)
-  "Return a property list which nicely presents all TAGS."
+If HEADERLINE is non-nil the returned list will be ready for
+inclusion in the buffer's header-line. HEADERLINE must be nil in
+all other cases."
+  (mapcar
+   (lambda (tag) (notmuch-tagger-make-link tag headerline))
+   tags))
+
+(defun notmuch-tagger-present-tags (tags &optional headerline)
+  "Return a property list which nicely presents all TAGS.
+
+If HEADERLINE is non-nil the returned list will be ready for
+inclusion in the buffer's header-line. HEADERLINE must be nil in
+all other cases."
   (list
-   " ("
-   (notmuch-tagger-separate-elems (notmuch-tagger-format-tags tags) ", ")
+   "("
+   (notmuch-tagger-separate-elems (notmuch-tagger-format-tags tags headerline) " ")
    ")"))
 
 (provide 'notmuch-tagger)
