@@ -1087,6 +1087,16 @@ function is used."
       (notmuch-show-update-header-line)
       (run-hooks 'notmuch-show-hook))))
 
+(defun notmuch-show-thread-tags ()
+  "Return the list of tags for the current thread."
+  (let ((tags (list)))
+    (notmuch-show-mapc (lambda ()
+			 (mapcar (lambda (elt)
+				   ;; Avoid adding duplicate tags
+				   (add-to-list 'tags elt))
+				 (notmuch-show-get-tags))))
+    tags))
+
 (defun notmuch-show-update-header-line ()
   "Make the header-line show the thread's subject and tags."
   (let ((thread-subject (notmuch-show-strip-re (notmuch-show-get-subject))))
@@ -1094,9 +1104,7 @@ function is used."
 	  (list
 	   thread-subject
 	   " "
-	   (notmuch-tagger-present-tags
-	    (notmuch-query-thread-tags-from-id notmuch-show-thread-id)
-	    t)))))
+	   (notmuch-tagger-present-tags (notmuch-show-thread-tags) t)))))
 
 (defun notmuch-show-capture-state ()
   "Capture the state of the current buffer.

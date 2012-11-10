@@ -839,9 +839,12 @@ thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
 # Add tag "mytagfoo" to one of the emails
 notmuch tag +mytagfoo id:${latest}
 test_emacs_expect_t \
-    "(let ((output (notmuch-query-thread-tags-from-id \"thread:${thread_id}\"))
+    "(notmuch-show \"thread:${thread_id}\")
+     (let ((output (notmuch-show-thread-tags))
            (expected '(\"inbox\" \"mytagfoo\" \"unread\")))
-      (notmuch-test-expect-equal output expected))"
+      (notmuch-test-expect-equal
+         (sort output #'string<)
+         (sort expected #'string<)))"
 
 test_begin_subtest "The tags appear in the header-line of notmuch-show"
 add_message \
