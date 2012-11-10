@@ -36,7 +36,7 @@
 (require 'notmuch-mua)
 (require 'notmuch-crypto)
 (require 'notmuch-print)
-(require 'notmuch-tager)
+(require 'notmuch-tagger)
 
 (declare-function notmuch-call-notmuch-process "notmuch" (&rest args))
 (declare-function notmuch-fontify-headers "notmuch" nil)
@@ -1098,7 +1098,7 @@ function is used."
     (setq header-line-format
 	  (cons
 	   thread-subject
-	   (notmuch-tager-present-tags
+	   (notmuch-tagger-present-tags
 	    (notmuch-query-thread-tags-from-id (notmuch-show-thread-id)))))))
 
 (defun notmuch-show-capture-state ()
