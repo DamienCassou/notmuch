@@ -88,6 +88,9 @@ thread."
   (let ((tag-lists
 	 (notmuch-query-map-forest
 	  (lambda (msg) (plist-get msg :tags))
+	  ;; We take the `car' of the results because there will
+	  ;; always be just one result as we ask for a specific
+	  ;; thread.
 	  (car (notmuch-query-get-threads
 		(list (concat "thread:" thread-id)))))))
     (case (length tag-lists)
