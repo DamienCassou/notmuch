@@ -839,7 +839,7 @@ thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
 # Add tag "mytagfoo" to one of the emails
 notmuch tag +mytagfoo id:${latest}
 test_emacs_expect_t \
-    "(let ((output (notmuch-query-thread-tags-from-id \"${thread_id}\"))
+    "(let ((output (notmuch-query-thread-tags-from-id \"thread:${thread_id}\"))
            (expected '(\"inbox\" \"mytagfoo\" \"unread\")))
       (notmuch-test-expect-equal output expected))"
 

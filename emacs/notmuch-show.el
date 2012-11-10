@@ -1055,12 +1055,6 @@ function is used."
     (notmuch-show-goto-first-wanted-message)
     (current-buffer)))
 
-(defun notmuch-show-thread-id ()
-  "Return the raw thread id of the currently visited thread."
-  ;; `notmuch-show-thread-id' is of the form "thread:00001212" so we
-  ;; have to extract the second part.
-  (second (split-string notmuch-show-thread-id ":")))
-
 (defun notmuch-show-build-buffer ()
   (let ((inhibit-read-only t))
 
@@ -1101,7 +1095,7 @@ function is used."
 	   thread-subject
 	   " "
 	   (notmuch-tagger-present-tags
-	    (notmuch-query-thread-tags-from-id (notmuch-show-thread-id))
+	    (notmuch-query-thread-tags-from-id notmuch-show-thread-id)
 	    t)))))
 
 (defun notmuch-show-capture-state ()
