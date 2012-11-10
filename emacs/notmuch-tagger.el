@@ -24,7 +24,14 @@
 ;;
 
 (require 'button)
-(require 'header-button)
+
+(or (require 'header-button nil t)
+    (let ((load-path
+           (cons (expand-file-name
+                  "fallback-libs"
+                  (file-name-directory (or load-file-name buffer-file-name)))
+                 load-path)))
+      (require 'header-button)))
 
 (defun notmuch-tagger-separate-elems (list sep)
   "Return a list with all elements of LIST separated by SEP."

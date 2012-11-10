@@ -1,0 +1,1 @@
+This file prevents Emacs from adding the directory to the `load-path'.
