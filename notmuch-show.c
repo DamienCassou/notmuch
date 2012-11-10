@@ -110,6 +110,9 @@ _get_one_line_summary (const void *ctx, notmuch_message_t *message)
 static void
 format_message_json (sprinter_t *sp, notmuch_message_t *message)
 {
+    /* Any changes to the JSON format should be reflected in the file
+     * devel/schemata. */
+
     void *local = talloc_new (NULL);
     notmuch_tags_t *tags;
     time_t date;
@@ -208,8 +211,12 @@ void
 format_headers_json (sprinter_t *sp, GMimeMessage *message,
 		     notmuch_bool_t reply)
 {
+    /* Any changes to the JSON format should be reflected in the file
+     * devel/schemata. */
+
     InternetAddressList *recipients;
     const char *recipients_string;
+    const char *reply_to_string;
 
     sp->begin_map (sp);
 
@@ -238,6 +245,12 @@ format_headers_json (sprinter_t *sp, GMimeMessage *message,
     if (recipients_string) {
 	sp->map_key (sp, "Bcc");
 	sp->string (sp, recipients_string);
+    }
+
+    reply_to_string = g_mime_message_get_reply_to (message);
+    if (reply_to_string) {
+	sp->map_key (sp, "Reply-To");
+	sp->string (sp, reply_to_string);
     }
 
     if (reply) {
@@ -352,6 +365,9 @@ signer_status_to_string (GMimeSignerStatus x)
 static void
 format_part_sigstatus_json (sprinter_t *sp, mime_node_t *node)
 {
+    /* Any changes to the JSON format should be reflected in the file
+     * devel/schemata. */
+
     GMimeSignatureList *siglist = node->sig_list;
 
     sp->begin_list (sp);
