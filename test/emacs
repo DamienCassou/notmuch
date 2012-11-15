@@ -877,10 +877,10 @@ test_emacs_expect_t \
     (re-search-forward \"mytagfoo\")
     (backward-char) ;; to be 'in' the tag
     (unless (eq major-mode 'notmuch-show-mode)
-       (error \"We must be in notmch-show at this point but we are in %s.\" major-mode))
+       (error \"We must be in notmuch-show at this point but we are in %s.\" major-mode))
     (push-button) ;; simulate a press on the RET key
     (if (eq major-mode 'notmuch-search-mode)
         t
-       (format \"We must be in notmch-search at this point but we are in %s.\" major-mode))"
+       (format \"We must be in notmuch-search at this point but we are in %s.\" major-mode))"
 
 test_done
