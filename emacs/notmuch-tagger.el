@@ -97,8 +97,10 @@ header-line."
 TARGET is a notmuch tag.
 
 If HEADERLINE is non-nil the returned list will be ready for
-inclusion in the buffer's header-line. HEADERLINE must be nil in
-all other cases."
+inclusion in the buffer's header-line (i.e., will use the
+`header-button' library if available). Otherwise it returns a
+property list ready for inclusion in a buffer (through
+`format-mode-line')."
   (if headerline
       (notmuch-tagger-make-headerline-link target)
     (notmuch-tagger-make-body-link target)))
@@ -108,8 +110,10 @@ all other cases."
 See Info node `(elisp)Mode Line Format' for more information.
 
 If HEADERLINE is non-nil the returned list will be ready for
-inclusion in the buffer's header-line. HEADERLINE must be nil in
-all other cases."
+inclusion in the buffer's header-line (i.e., will use the
+`header-button' library if available). Otherwise it returns a
+property list ready for inclusion in a buffer (through
+`format-mode-line')."
   (mapcar
    (lambda (tag) (notmuch-tagger-make-link tag headerline))
    tags))
@@ -118,8 +122,10 @@ all other cases."
   "Return a property list which nicely presents all TAGS.
 
 If HEADERLINE is non-nil the returned list will be ready for
-inclusion in the buffer's header-line. HEADERLINE must be nil in
-all other cases."
+inclusion in the buffer's header-line (i.e., will use the
+`header-button' library if available). Otherwise it returns a
+property list ready for inclusion in a buffer (through
+`format-mode-line')."
   (list
    "("
    (notmuch-tagger-separate-elems (notmuch-tagger-format-tags tags headerline) " ")
