@@ -835,11 +835,12 @@ add_message \
     "[in-reply-to]=\<$parent\>"
 latest=${gen_msg_id}
 # Extract the thread-id from one of the emails
-thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
+thread_id=$(notmuch search --output=threads id:${latest})
+echo THREAD ID: '"'$thread_id'"'
 # Add tag "mytagfoo" to one of the emails
 notmuch tag +mytagfoo id:${latest}
 test_emacs_expect_t \
-    "(notmuch-show \"thread:${thread_id}\")
+    "(notmuch-show \"${thread_id}\")
      (let ((output (notmuch-show-thread-tags))
            (expected '(\"inbox\" \"mytagfoo\" \"unread\")))
       (notmuch-test-expect-equal
@@ -854,9 +855,9 @@ parent=${gen_msg_id}
 # Add tag "mytagfoo" to one of the emails
 notmuch tag +mytagfoo id:${parent}
 # Extract the thread-id from one of the emails
-thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
+thread_id=$(notmuch search --output=threads id:${latest})
 test_emacs_expect_t \
-    "(notmuch-show \"thread:${thread_id}\")
+    "(notmuch-show \"${thread_id}\")
      (if (string-match-p \"mytagfoo\" (format-mode-line header-line-format))
          t
        \"The tag mytagfoo was not in the header-line-format\")"
@@ -869,9 +870,9 @@ parent=${gen_msg_id}
 # Add tag "mytagfoo" to one of the emails
 notmuch tag +mytagfoo id:${parent}
 # Extract the thread-id from one of the emails
-thread_id=$(notmuch search id:${latest} | sed -e "s/thread:\([a-f0-9]*\).*/\1/")
+thread_id=$(notmuch search --output=threads id:${latest})
 test_emacs_expect_t \
-    "(notmuch-show \"thread:${thread_id}\")
+    "(notmuch-show \"${thread_id}\")
     (goto-char (point-min))
     (re-search-forward \"mytagfoo\")
     (backward-char) ;; to be 'in' the tag
