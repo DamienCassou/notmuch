@@ -998,23 +998,62 @@ message at DEPTH in the current thread."
   "Insert the forest of threads FOREST."
   (mapc (lambda (thread) (notmuch-show-insert-thread thread 0)) forest))
 
+(defvar notmuch-id-regexp
+  (concat
+   ;; Match the id: prefix only if it begins a word (to disallow, for
+   ;; example, matching cid:).
+   "\\<id:\\("
+   ;; If the term starts with a ", then parse Xapian's quoted boolean
+   ;; term syntax, which allows for anything as long as embedded
+   ;; double quotes escaped by doubling them.  We also disallow
+   ;; newlines (which Xapian allows) to prevent runaway terms.
+   "\"\\([^\"\n]\\|\"\"\\)*\""
+   ;; Otherwise, parse Xapian's unquoted syntax, which goes up to the
+   ;; next space or ).  We disallow [.,;] as the last character
+   ;; because these are probably part of the surrounding text, and not
+   ;; part of the id.  This doesn't match single character ids; meh.
+   "\\|[^\"[:space:])][^[:space:])]*[^])[:space:].,:;?!]"
+   "\\)")
+  "The regexp used to match id: links in messages.")
+
+(defvar notmuch-mid-regexp
+  ;; goto-address-url-regexp matched cid: links, which have the same
+  ;; grammar as the message ID part of a mid: link.  Construct the
+  ;; regexp using the same technique as goto-address-url-regexp.
+  (concat "\\<mid:\\(" thing-at-point-url-path-regexp "\\)")
+  "The regexp used to match mid: links in messages.
+
+See RFC 2392.")
+
 (defun notmuch-show-buttonise-links (start end)
   "Buttonise URLs and mail addresses between START and END.
 
-This also turns id:\"<message id>\"-parts into buttons for
-a corresponding notmuch search."
+This also turns id:\"<message id>\"-parts and mid: links into
+buttons for a corresponding notmuch search."
   (goto-address-fontify-region start end)
   (save-excursion
-    (goto-char start)
-    (while (re-search-forward "id:\\(\"?\\)[^[:space:]\"]+\\1" end t)
-      ;; remove the overlay created by goto-address-mode
-      (remove-overlays (match-beginning 0) (match-end 0) 'goto-address t)
-      (make-text-button (match-beginning 0) (match-end 0)
-			'action `(lambda (arg)
-				   (notmuch-show ,(match-string-no-properties 0)))
-			'follow-link t
-			'help-echo "Mouse-1, RET: search for this message"
-			'face goto-address-mail-face))))
+    (let (links)
+      (goto-char start)
+      (while (re-search-forward notmuch-id-regexp end t)
+	(push (list (match-beginning 0) (match-end 0)
+		    (match-string-no-properties 0)) links))
+      (goto-char start)
+      (while (re-search-forward notmuch-mid-regexp end t)
+	(let* ((mid-cid (match-string-no-properties 1))
+	       (mid (save-match-data
+		      (string-match "^[^/]*" mid-cid)
+		      (url-unhex-string (match-string 0 mid-cid)))))
+	  (push (list (match-beginning 0) (match-end 0)
+		      (notmuch-id-to-query mid)) links)))
+      (dolist (link links)
+	;; Remove the overlay created by goto-address-mode
+	(remove-overlays (first link) (second link) 'goto-address t)
+	(make-text-button (first link) (second link)
+			  'action `(lambda (arg)
+				     (notmuch-show ,(third link)))
+			  'follow-link t
+			  'help-echo "Mouse-1, RET: search for this message"
+			  'face goto-address-mail-face)))))
 
 ;;;###autoload
 (defun notmuch-show (thread-id &optional parent-buffer query-context buffer-name)
