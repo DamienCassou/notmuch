@@ -362,10 +362,8 @@ operation on the contents of the current buffer."
     (goto-char (notmuch-show-message-top))
     (if (re-search-forward "(\\([^()]*\\))$" (line-end-position) t)
 	(let ((inhibit-read-only t))
-	  (replace-match (concat "("
-				 (propertize (mapconcat 'identity tags " ")
-					     'face 'notmuch-tag-face)
-				 ")")))))
+	  (replace-match (propertize (notmuch-tagger-format-tags tags)
+				     'face 'notmuch-tag-face)))))
   (unless no-headerline-update
     (notmuch-show-update-header-line)))
 
@@ -443,10 +441,11 @@ message at DEPTH in the current thread."
 	    (notmuch-show-clean-address (plist-get headers :From))
 	    " ("
 	    date
-	    ") ("
-	    (propertize (mapconcat 'identity tags " ")
-			'face 'notmuch-tag-face)
-	    ")\n")
+	    ") "
+	    (propertize
+	     (notmuch-tagger-format-tags tags)
+	     'face 'notmuch-tag-face)
+	    "\n")
     (overlay-put (make-overlay start (point)) 'face 'notmuch-message-summary-face)))
 
 (defun notmuch-show-insert-header (header header-value)
