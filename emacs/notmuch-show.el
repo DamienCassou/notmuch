@@ -36,6 +36,7 @@
 (require 'notmuch-mua)
 (require 'notmuch-crypto)
 (require 'notmuch-print)
+(require 'notmuch-tagger)
 
 (declare-function notmuch-call-notmuch-process "notmuch" (&rest args))
 (declare-function notmuch-fontify-headers "notmuch" nil)
@@ -1121,10 +1122,27 @@ function is used."
 
       (jit-lock-register #'notmuch-show-buttonise-links)
 
-      ;; Set the header line to the subject of the first message.
-      (setq header-line-format (notmuch-show-strip-re (notmuch-show-get-subject)))
-
+      (notmuch-show-update-header-line)
       (run-hooks 'notmuch-show-hook))))
+
+(defun notmuch-show-thread-tags ()
+  "Return the list of tags for the current thread."
+  (let ((tags (list)))
+    (notmuch-show-mapc (lambda ()
+			 (mapcar (lambda (elt)
+				   ;; Avoid adding duplicate tags
+				   (add-to-list 'tags elt))
+				 (notmuch-show-get-tags))))
+    tags))
+
+(defun notmuch-show-update-header-line ()
+  "Make the header-line show the thread's subject and tags."
+  (let ((thread-subject (notmuch-show-strip-re (notmuch-show-get-subject))))
+    (setq header-line-format
+	  (list
+	   thread-subject
+	   " "
+	   (notmuch-tagger-present-tags-header-line (notmuch-show-thread-tags))))))
 
 (defun notmuch-show-capture-state ()
   "Capture the state of the current buffer.
