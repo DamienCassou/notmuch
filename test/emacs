@@ -813,5 +813,67 @@ test_emacs "(let ((mm-text-html-renderer
 test_expect_success "Rendering HTML mail with images" \
     'grep -q smiley OUTPUT'
 
+test_begin_subtest "Extracting all tags from a thread"
+add_message \
+    '[subject]="Extracting all tags from a thread"' \
+    '[body]="body 1"'
+parent=${gen_msg_id}
+add_message \
+    '[subject]="Extracting all tags from a thread"' \
+    '[body]="body 2"' \
+    "[in-reply-to]=\<$parent\>"
+add_message \
+    '[subject]="Extracting all tags from a thread"' \
+    '[body]="body 3"' \
+    "[in-reply-to]=\<$parent\>"
+latest=${gen_msg_id}
+# Extract the thread-id from one of the emails
+thread_id=$(notmuch search --output=threads id:${latest})
+echo THREAD ID: '"'$thread_id'"'
+# Add tag "mytagfoo" to one of the emails
+notmuch tag +mytagfoo id:${latest}
+test_emacs_expect_t \
+    "(notmuch-show \"${thread_id}\")
+     (let ((output (notmuch-show-thread-tags))
+           (expected '(\"inbox\" \"mytagfoo\" \"unread\")))
+      (notmuch-test-expect-equal
+         (sort output #'string<)
+         (sort expected #'string<)))"
+
+test_begin_subtest "The tags appear in the header-line of notmuch-show"
+add_message \
+    '[subject]="foo bar"' \
+    '[body]="body 1"'
+parent=${gen_msg_id}
+# Add tag "mytagfoo" to one of the emails
+notmuch tag +mytagfoo id:${parent}
+# Extract the thread-id from one of the emails
+thread_id=$(notmuch search --output=threads id:${latest})
+test_emacs_expect_t \
+    "(notmuch-show \"${thread_id}\")
+     (if (string-match-p \"mytagfoo\" (format-mode-line header-line-format))
+         t
+       \"The tag mytagfoo was not in the header-line-format\")"
+
+test_begin_subtest "The tags of notmuch-show emails are clickable"
+add_message \
+    '[subject]="foo bar"' \
+    '[body]="body 1"'
+parent=${gen_msg_id}
+# Add tag "mytagfoo" to one of the emails
+notmuch tag +mytagfoo id:${parent}
+# Extract the thread-id from one of the emails
+thread_id=$(notmuch search --output=threads id:${latest})
+test_emacs_expect_t \
+    "(notmuch-show \"${thread_id}\")
+    (goto-char (point-min))
+    (re-search-forward \"mytagfoo\")
+    (backward-char) ;; to be 'in' the tag
+    (unless (eq major-mode 'notmuch-show-mode)
+       (error \"We must be in notmuch-show at this point but we are in %s.\" major-mode))
+    (push-button) ;; simulate a press on the RET key
+    (if (eq major-mode 'notmuch-search-mode)
+        t
+       (format \"We must be in notmuch-search at this point but we are in %s.\" major-mode))"
 
 test_done
