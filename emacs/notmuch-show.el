@@ -36,6 +36,7 @@
 (require 'notmuch-mua)
 (require 'notmuch-crypto)
 (require 'notmuch-print)
+(require 'notmuch-tagger)
 
 (declare-function notmuch-call-notmuch-process "notmuch" (&rest args))
 (declare-function notmuch-fontify-headers "notmuch" nil)
@@ -355,7 +356,7 @@ operation on the contents of the current buffer."
   "Return a string comprised of `n' spaces."
   (make-string n ? ))
 
-(defun notmuch-show-update-tags (tags)
+(defun notmuch-show-update-tags (tags &optional no-headerline-update)
   "Update the displayed tags of the current message."
   (save-excursion
     (goto-char (notmuch-show-message-top))
@@ -364,7 +365,9 @@ operation on the contents of the current buffer."
 	  (replace-match (concat "("
 				 (propertize (mapconcat 'identity tags " ")
 					     'face 'notmuch-tag-face)
-				 ")"))))))
+				 ")")))))
+  (unless no-headerline-update
+    (notmuch-show-update-header-line)))
 
 (defun notmuch-clean-address (address)
   "Try to clean a single email ADDRESS for display. Return a cons
@@ -1136,10 +1139,27 @@ function is used."
 
       (jit-lock-register #'notmuch-show-buttonise-links)
 
-      ;; Set the header line to the subject of the first message.
-      (setq header-line-format (notmuch-show-strip-re (notmuch-show-get-subject)))
-
+      (notmuch-show-update-header-line)
       (run-hooks 'notmuch-show-hook))))
+
+(defun notmuch-show-thread-tags ()
+  "Return the list of tags for the current thread."
+  (let ((tags (list)))
+    (notmuch-show-mapc (lambda ()
+			 (mapcar (lambda (elt)
+				   ;; Avoid adding duplicate tags
+				   (add-to-list 'tags elt))
+				 (notmuch-show-get-tags))))
+    (sort tags 'string<)))
+
+(defun notmuch-show-update-header-line ()
+  "Make the header-line show the thread's subject and tags."
+  (let ((thread-subject (notmuch-show-strip-re (notmuch-show-get-subject))))
+    (setq header-line-format
+	  (list
+	   thread-subject
+	   " "
+	   (notmuch-tagger-format-tags-header-line (notmuch-show-thread-tags))))))
 
 (defun notmuch-show-capture-state ()
   "Capture the state of the current buffer.
@@ -1443,10 +1463,10 @@ current thread."
 (defun notmuch-show-get-depth ()
   (notmuch-show-get-prop :depth))
 
-(defun notmuch-show-set-tags (tags)
+(defun notmuch-show-set-tags (tags &optional no-headerline-update)
   "Set the tags of the current message."
   (notmuch-show-set-prop :tags tags)
-  (notmuch-show-update-tags tags))
+  (notmuch-show-update-tags tags no-headerline-update))
 
 (defun notmuch-show-get-tags ()
   "Return the tags of the current message."
@@ -1760,7 +1780,8 @@ See `notmuch-tag' for information on the format of TAG-CHANGES."
      (let* ((current-tags (notmuch-show-get-tags))
 	    (new-tags (notmuch-update-tags current-tags tag-changes)))
        (unless (equal current-tags new-tags)
-	 (notmuch-show-set-tags new-tags))))))
+	 (notmuch-show-set-tags new-tags t)))))
+  (notmuch-show-update-header-line))
 
 (defun notmuch-show-add-tag ()
   "Same as `notmuch-show-tag' but sets initial input to '+'."

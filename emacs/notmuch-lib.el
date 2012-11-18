@@ -706,8 +706,15 @@ left it."
     ;; Clear out what we've parsed
     (delete-region (point-min) (point))))
 
-
-
+(defun notmuch-intersperse (list sep)
+  "Return a list with all elements of LIST separated by SEP."
+  (let ((first t)
+        (res nil))
+    (dolist (elt list (nreverse res))
+      (unless first
+        (push sep res))
+      (setq first nil)
+      (push elt res))))
 
 (provide 'notmuch-lib)
 
