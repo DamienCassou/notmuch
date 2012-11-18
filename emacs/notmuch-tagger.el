@@ -32,11 +32,63 @@
       (setq first nil)
       (push elt res))))
 
+(defun notmuch-tagger-header-button-present-p ()
+  "Check if `header-button' can be loaded or is already loaded.
+
+`header-button' is a third-party library which facilitates the
+creation of links in emacs header-line. This function tries to
+`require' `header-button' and returns nil if and only if this
+fails."
+  (require 'header-button nil t))
+
+(defun notmuch-tagger-goto-target (tag)
+  "Show a `notmuch-search' buffer for the TAG."
+  (notmuch-search (concat "tag:" tag)))
+
+(defun notmuch-tagger-header-button-action (button)
+  "Open `notmuch-search' for the tag referenced by BUTTON.
+This function depends on the presence of the `header-button'
+library. Please call `notmuch-tagger-header-button-present-p' to
+test if the library is present before calling this function."
+  (let ((tag (header-button-get button 'notmuch-tagger-tag)))
+    (notmuch-tagger-goto-target tag)))
+
+(eval-after-load "header-button"
+  '(define-button-type 'notmuch-tagger-header-button-type
+     'supertype 'header
+     'action    #'notmuch-tagger-header-button-action
+     'follow-link t))
+
+(defun notmuch-tagger-really-make-header-link (tag)
+   "Return a property list that presents a link to TAG.
+
+The returned property list will only work in the header-line.
+Additionally, this function depends on the presence of the
+`header-button' library. Please call
+`notmuch-tagger-header-button-present-p' to test if library is
+present before calling this function."
+   (header-button-format
+    tag
+    :type 'notmuch-tagger-header-button-type
+    'notmuch-tagger-tag tag
+    'help-echo (format "%s: Search other messages like this" tag)))
+
+(defun notmuch-tagger-make-header-link (tag)
+  "Return a property list to present TAG as a link to search.
+
+This only works if `header-button' is loaded. Simply returns tag
+if not."
+  (if (notmuch-tagger-header-button-present-p)
+      (notmuch-tagger-really-make-header-link tag)
+    tag))
+
 (defun notmuch-tagger-present-tags-header-line (tags)
   "Return a property list to present TAGS in emacs header-line."
   (list
    "("
-   (notmuch-tagger-separate-elems tags " ")
+   (notmuch-tagger-separate-elems
+    (mapcar #'notmuch-tagger-make-header-link tags)
+            " ")
    ")"))
 
 
