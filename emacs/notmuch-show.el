@@ -431,10 +431,11 @@ message at DEPTH in the current thread."
 	    (notmuch-show-clean-address (plist-get headers :From))
 	    " ("
 	    date
-	    ") ("
-	    (propertize (mapconcat 'identity tags " ")
-			'face 'notmuch-tag-face)
-	    ")\n")
+	    ") "
+	    (propertize
+	     (format-mode-line (notmuch-tagger-present-tags tags))
+	     'face 'notmuch-tag-face)
+	    "\n")
     (overlay-put (make-overlay start (point)) 'face 'notmuch-message-summary-face)))
 
 (defun notmuch-show-insert-header (header header-value)

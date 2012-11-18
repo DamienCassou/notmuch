@@ -53,11 +53,20 @@ test if the library is present before calling this function."
   (let ((tag (header-button-get button 'notmuch-tagger-tag)))
     (notmuch-tagger-goto-target tag)))
 
+(defun notmuch-tagger-body-button-action (button)
+  "Open `notmuch-search' for the tag referenced by BUTTON."
+  (let ((tag (button-get button 'notmuch-tagger-tag)))
+    (notmuch-tagger-goto-target tag)))
+
 (eval-after-load "header-button"
   '(define-button-type 'notmuch-tagger-header-button-type
      'supertype 'header
      'action    #'notmuch-tagger-header-button-action
      'follow-link t))
+
+(define-button-type 'notmuch-tagger-body-button-type
+  'action    #'notmuch-tagger-body-button-action
+  'follow-link t)
 
 (defun notmuch-tagger-really-make-header-link (tag)
    "Return a property list that presents a link to TAG.
@@ -82,6 +91,19 @@ if not."
       (notmuch-tagger-really-make-header-link tag)
     tag))
 
+(defun notmuch-tagger-make-body-link (tag)
+  "Return a property list that presents a link to TAG.
+The returned property list will work everywhere except in the
+header-line. For a link that works on the header-line, prefer
+`notmuch-tagger-make-header-link'."
+  (let ((button (copy-sequence tag)))
+    (make-text-button
+     button nil
+     'type 'notmuch-tagger-body-button-type
+     'notmuch-tagger-tag tag
+     'help-echo (format "%s: Search other messages like this" tag))
+    button))
+
 (defun notmuch-tagger-present-tags-header-line (tags)
   "Return a property list to present TAGS in emacs header-line."
   (list
@@ -91,6 +113,17 @@ if not."
             " ")
    ")"))
 
+(defun notmuch-tagger-present-tags (tags)
+  "Return a property list to present TAGS in emacs.
+If tags the result of this function is to be used within the
+header-line, prefer `notmuch-tagger-present-tags-header-line'
+instead of this function."
+  (list
+   "("
+   (notmuch-tagger-separate-elems
+    (mapcar #'notmuch-tagger-make-body-link tags)
+            " ")
+   ")"))
 
 (provide 'notmuch-tagger)
 ;;; notmuch-tagger.el ends here
