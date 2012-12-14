@@ -133,7 +133,7 @@ test_emacs '(notmuch-show "id:'$gen_msg_id'")
 	(notmuch-test-mark-links)
 	(test-visible-output)'
 cat <<EOF >EXPECTED
-Notmuch Test Suite <test_suite@notmuchmail.org> (2001-01-05) (inbox)
+Notmuch Test Suite <test_suite@notmuchmail.org> (2001-01-05) (<<inbox>>)
 Subject: id buttonization
 To: Notmuch Test Suite <test_suite@notmuchmail.org>
 Date: Fri, 05 Jan 2001 15:43:57 +0000
